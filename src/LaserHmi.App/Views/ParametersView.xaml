@@ -1,0 +1,229 @@
+﻿<UserControl x:Class="LaserHmi.App.Views.ParametersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:LaserHmi.App.Models"
+             xmlns:vm="clr-namespace:LaserHmi.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:ParametersViewModel}"
+             d:DesignHeight="760"
+             d:DesignWidth="1100"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!--  单个工艺参数：名称（含说明提示）+ 当前值 + 滑杆  -->
+        <DataTemplate x:Key="ParamItemTemplate" DataType="{x:Type models:ParamItem}">
+            <StackPanel Margin="0,0,0,15">
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource LabelText}" Text="{Binding Name}" />
+                        <Path Width="12"
+                              Height="12"
+                              Margin="5,0,0,0"
+                              VerticalAlignment="Center"
+                              Data="{StaticResource IconInfo}"
+                              Stretch="Uniform"
+                              Stroke="{StaticResource BrushTextMuted}"
+                              StrokeThickness="1.6">
+                            <Path.ToolTip>
+                                <TextBlock MaxWidth="250"
+                                           Text="{Binding Description}"
+                                           TextWrapping="Wrap" />
+                            </Path.ToolTip>
+                        </Path>
+                    </StackPanel>
+                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                        <TextBlock FontFamily="{StaticResource FontMono}"
+                                   FontSize="13.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushAccent}"
+                                   Text="{Binding ValueText}" />
+                        <TextBlock Margin="3,0,0,1"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="{Binding Unit}"
+                                   VerticalAlignment="Bottom" />
+                    </StackPanel>
+                </Grid>
+                <Slider Margin="0,8,0,0"
+                        IsSnapToTickEnabled="True"
+                        Maximum="{Binding Max}"
+                        Minimum="{Binding Min}"
+                        TickFrequency="{Binding Step}"
+                        Value="{Binding Value}" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="22,18,22,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  标题行：预设选择  -->
+        <Grid Grid.Row="0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="参数设置" />
+                <TextBlock Margin="0,4,0,0"
+                           Style="{StaticResource CaptionText}"
+                           Text="激光与运动工艺参数编辑，修改后需点击「应用参数」下发至控制器" />
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center" Style="{StaticResource LabelText}" Text="工艺预设" />
+                <ComboBox Width="176"
+                          Margin="10,0,0,0"
+                          ItemsSource="{Binding Presets}"
+                          SelectedItem="{Binding SelectedPreset}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Margin="10,0,0,0"
+                        Command="{Binding ApplyPresetCommand}"
+                        Content="应用预设"
+                        Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+        </Grid>
+
+        <!--  参数合理性提示条（在推荐范围内时自动隐藏）  -->
+        <Border Grid.Row="1"
+                Margin="0,14,0,0"
+                Padding="12,8"
+                Background="{StaticResource BrushWarningSoft}"
+                BorderBrush="#5A3E14"
+                BorderThickness="1"
+                CornerRadius="6">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ValidationHint}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel Orientation="Horizontal">
+                <Path Width="14"
+                      Height="14"
+                      VerticalAlignment="Center"
+                      Data="{StaticResource IconWarning}"
+                      Stretch="Uniform"
+                      Stroke="{StaticResource BrushWarning}"
+                      StrokeThickness="1.8" />
+                <TextBlock Margin="9,0,0,0"
+                           FontSize="12"
+                           Foreground="{StaticResource BrushWarning}"
+                           Text="{Binding ValidationHint}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!--  三组参数  -->
+        <ScrollViewer Grid.Row="2" Margin="0,14,0,0" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--  激光参数  -->
+                <Border Grid.Column="0" Margin="0,0,14,0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleText}" Text="激光参数" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="功率 / 频率 / 脉宽 / 加工间距与次数"
+                                   TextWrapping="Wrap" />
+                        <ItemsControl Margin="0,14,0,0"
+                                      ItemTemplate="{StaticResource ParamItemTemplate}"
+                                      ItemsSource="{Binding LaserParams}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  运动参数  -->
+                <Border Grid.Column="1" Margin="0,0,14,0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleText}" Text="运动参数" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="扫描速度 / 空跳速度 / 延时与轴运动控制"
+                                   TextWrapping="Wrap" />
+                        <ItemsControl Margin="0,14,0,0"
+                                      ItemTemplate="{StaticResource ParamItemTemplate}"
+                                      ItemsSource="{Binding MotionParams}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  安全参数  -->
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleText}" Text="安全参数" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="过温保护阈值与冷却等待策略"
+                                   TextWrapping="Wrap" />
+                        <ItemsControl Margin="0,14,0,0"
+                                      ItemTemplate="{StaticResource ParamItemTemplate}"
+                                      ItemsSource="{Binding SafetyParams}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <!--  底部操作栏：下发 / 恢复默认  -->
+        <Border Grid.Row="3" Margin="0,14,0,0" Style="{StaticResource CardTight}">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource LabelText}" Text="当前匹配预设：" />
+                    <TextBlock FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Text="{Binding MatchedPresetName}" />
+                    <TextBlock Margin="14,0,0,0"
+                               FontSize="11"
+                               Foreground="{StaticResource BrushWarning}"
+                               Text="● 有未下发的修改">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Command="{Binding RestoreDefaultsCommand}"
+                            Content="恢复默认"
+                            Style="{StaticResource GhostButton}" />
+                    <Button Margin="10,0,0,0"
+                            AutomationProperties.Name="应用参数"
+                            Command="{Binding ApplyCommand}"
+                            Style="{StaticResource PrimaryButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="14"
+                                  Height="14"
+                                  Data="{StaticResource IconCheck}"
+                                  Stretch="Uniform"
+                                  Stroke="{StaticResource BrushTextOnAccent}"
+                                  StrokeThickness="2" />
+                            <TextBlock Margin="7,0,0,0"
+                                       Foreground="{StaticResource BrushTextOnAccent}"
+                                       Text="应用参数" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

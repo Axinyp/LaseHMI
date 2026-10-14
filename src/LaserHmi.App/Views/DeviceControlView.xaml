@@ -1,0 +1,442 @@
+﻿<UserControl x:Class="LaserHmi.App.Views.DeviceControlView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:LaserHmi.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:DeviceControlViewModel}"
+             d:DesignHeight="760"
+             d:DesignWidth="1100"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!--  紧急停止按钮：圆形红色大按钮，防误触、易识别  -->
+        <Style x:Key="EmergencyButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="134" />
+            <Setter Property="Height" Value="134" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="#1AFF5D5D" />
+                            <Ellipse x:Name="Ring"
+                                     Margin="7"
+                                     Fill="#3A161C"
+                                     Stroke="#7AFF5D5D"
+                                     StrokeThickness="2" />
+                            <Ellipse x:Name="Core" Margin="17">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush GradientOrigin="0.35,0.28">
+                                        <GradientStop Offset="0" Color="#FF8080" />
+                                        <GradientStop Offset="0.45" Color="#E23B3B" />
+                                        <GradientStop Offset="1" Color="#8E1B26" />
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock HorizontalAlignment="Center"
+                                           FontSize="21"
+                                           FontWeight="Bold"
+                                           Foreground="#FFFFFF"
+                                           Text="急停" />
+                                <TextBlock Margin="0,3,0,0"
+                                           HorizontalAlignment="Center"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="12"
+                                           Foreground="#FFD7D7"
+                                           Text="E-STOP" />
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="#B8FF5D5D" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Core" Property="Opacity" Value="0.72" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.32" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="22,18,22,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  标题行 + 当前状态  -->
+        <Grid Grid.Row="0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="设备控制" />
+                <TextBlock Margin="0,4,0,0"
+                           Style="{StaticResource CaptionText}"
+                           Text="按操作风险分层的操作面板：常规操作直接执行，重要 / 危险操作需二次确认" />
+            </StackPanel>
+            <Border Padding="13,7"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Background="{StaticResource BrushBgCard}"
+                    BorderBrush="{StaticResource BrushBorderSoft}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="9"
+                             Height="9"
+                             VerticalAlignment="Center"
+                             Fill="{Binding Status.State, Converter={StaticResource MachineStateBrush}}" />
+                    <TextBlock Margin="8,0,0,0"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Text="{Binding Status.State, Converter={StaticResource MachineStateText}}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!--  内容区：左操作面板 / 右联锁与记录  -->
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="330" />
+            </Grid.ColumnDefinitions>
+
+            <!--  左：操作面板  -->
+            <ScrollViewer Grid.Column="0" Margin="0,0,14,0" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!--  状态引导条  -->
+                    <Border Padding="12,8"
+                            Background="{StaticResource BrushBgPanel}"
+                            BorderBrush="{StaticResource BrushBorderSoft}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="14"
+                                  Height="14"
+                                  VerticalAlignment="Center"
+                                  Data="{StaticResource IconInfo}"
+                                  Stretch="Uniform"
+                                  Stroke="{StaticResource BrushTextSecondary}"
+                                  StrokeThickness="1.7" />
+                            <TextBlock Margin="9,0,0,0"
+                                       FontSize="12"
+                                       Foreground="{StaticResource BrushTextSecondary}"
+                                       Text="{Binding Status.State, Converter={StaticResource MachineStateHint}}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  常规操作  -->
+                    <Border Margin="0,12,0,0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Style="{StaticResource SectionTitleText}" Text="常规操作" />
+                                <TextBlock HorizontalAlignment="Right"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="执行无需确认，可随时中断" />
+                            </Grid>
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Margin="0,0,5,0"
+                                        AutomationProperties.Name="回零"
+                                        Command="{Binding Operations.HomeCommand}"
+                                        Style="{StaticResource SecondaryButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Width="15"
+                                              Height="15"
+                                              Data="{StaticResource IconHome}"
+                                              Stretch="Uniform"
+                                              Stroke="{StaticResource BrushTextPrimary}"
+                                              StrokeThickness="1.7" />
+                                        <TextBlock Margin="7,0,0,0" Text="回零" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="1"
+                                        Margin="5,0,5,0"
+                                        AutomationProperties.Name="暂停"
+                                        Command="{Binding Operations.PauseCommand}"
+                                        Style="{StaticResource SecondaryButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Width="15"
+                                              Height="15"
+                                              Data="{StaticResource IconPause}"
+                                              Stretch="Uniform"
+                                              Stroke="{StaticResource BrushTextPrimary}"
+                                              StrokeThickness="1.7" />
+                                        <TextBlock Margin="7,0,0,0" Text="暂停" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2"
+                                        Margin="5,0,0,0"
+                                        AutomationProperties.Name="继续"
+                                        Command="{Binding Operations.ResumeCommand}"
+                                        Style="{StaticResource SecondaryButton}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Path Width="13"
+                                              Height="13"
+                                              Data="{StaticResource IconPlay}"
+                                              Fill="{StaticResource BrushTextPrimary}"
+                                              Stretch="Uniform" />
+                                        <TextBlock Margin="7,0,0,0" Text="继续" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <TextBlock Margin="0,10,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="回零：建立坐标系起点；暂停 / 继续：仅对加工中的任务生效" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  重要操作  -->
+                    <Border Margin="0,12,0,0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Style="{StaticResource SectionTitleText}" Text="重要操作" />
+                                <TextBlock HorizontalAlignment="Right"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="执行前弹出确认对话框" />
+                            </Grid>
+                            <Button Margin="0,12,0,0"
+                                    AutomationProperties.Name="启动加工"
+                                    Command="{Binding Operations.StartCommand}"
+                                    Style="{StaticResource PrimaryButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="15"
+                                          Height="15"
+                                          Data="{StaticResource IconPlay}"
+                                          Fill="{StaticResource BrushTextOnAccent}"
+                                          Stretch="Uniform" />
+                                    <TextBlock Margin="8,0,0,0"
+                                               Foreground="{StaticResource BrushTextOnAccent}"
+                                               Text="启动加工" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock Margin="0,10,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="确认框将显示加工件数与当前参数预设，请在启动前确认工件已装夹、防护门已关闭"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  危险操作  -->
+                    <Border Margin="0,12,0,0"
+                            Background="{StaticResource BrushBgCard}"
+                            BorderBrush="#5E2A34"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Style="{StaticResource SectionTitleText}"
+                                           Foreground="{StaticResource BrushDanger}"
+                                           Text="危险操作" />
+                                <TextBlock HorizontalAlignment="Right"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="红色警示 + 二次确认，操作不可逆" />
+                            </Grid>
+                            <Button Margin="0,12,0,0"
+                                    AutomationProperties.Name="停止任务"
+                                    Command="{Binding Operations.StopCommand}"
+                                    Style="{StaticResource DangerButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="14"
+                                          Height="14"
+                                          Data="{StaticResource IconStop}"
+                                          Stretch="Uniform"
+                                          Stroke="{StaticResource BrushDanger}"
+                                          StrokeThickness="1.7" />
+                                    <TextBlock Margin="8,0,0,0"
+                                               Foreground="{StaticResource BrushDanger}"
+                                               Text="停止任务" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock Margin="0,10,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="停止将终止当前加工任务，未完成部分作废且无法恢复"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  紧急停止  -->
+                    <Border Margin="0,12,0,0"
+                            Background="{StaticResource BrushBgCard}"
+                            BorderBrush="#5E2A34"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"
+                                    AutomationProperties.Name="紧急停止 E-STOP"
+                                    Command="{Binding Operations.EmergencyStopCommand}"
+                                    Style="{StaticResource EmergencyButtonStyle}"
+                                    ToolTip="立即切断激光输出并停止运动，无需确认" />
+                            <StackPanel Grid.Column="1"
+                                        Margin="26,0,0,0"
+                                        VerticalAlignment="Center">
+                                <TextBlock FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource BrushDanger}"
+                                           Text="紧急停止（E-STOP）" />
+                                <TextBlock Margin="0,8,0,0"
+                                           FontSize="12"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="按下后立即生效、无需确认：激光输出即刻切断，运动轴保持当前位置，设备进入急停状态。适用于人员安全受威胁或设备出现异常动作的紧急场合。"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="急停触发后需先在报警页确认全部报警，方可执行「复位急停」，随后重新回零。"
+                                           TextWrapping="Wrap" />
+                                <Button Margin="0,12,0,0"
+                                        HorizontalAlignment="Left"
+                                        Command="{Binding Operations.ResetEmergencyCommand}"
+                                        Content="复位急停"
+                                        Style="{StaticResource SecondaryButton}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!--  右：联锁状态与最近操作  -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!--  安全联锁  -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleText}" Text="安全联锁" />
+
+                            <Grid Margin="0,13,0,0">
+                                <TextBlock Style="{StaticResource LabelText}" Text="光路联锁" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="● 已闭合" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushSuccess}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status.Laser.InterlockClosed}" Value="False">
+                                                    <Setter Property="Text" Value="● 已断开" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Margin="0,12,0,0">
+                                <TextBlock Style="{StaticResource LabelText}" Text="急停回路" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="● 正常" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushSuccess}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status.State}" Value="EStopped">
+                                                    <Setter Property="Text" Value="● 已触发" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Margin="0,12,0,0">
+                                <TextBlock Style="{StaticResource LabelText}" Text="回零状态" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="● 未回零" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushWarning}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status.Motion.Homed}" Value="True">
+                                                    <Setter Property="Text" Value="● 三轴已回零" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushSuccess}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Margin="0,12,0,0">
+                                <TextBlock Style="{StaticResource LabelText}" Text="轴位限位" />
+                                <TextBlock HorizontalAlignment="Right" FontSize="12">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="● 已压限位" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushWarning}" />
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Status.Motion.XAtLimit}" Value="False" />
+                                                        <Condition Binding="{Binding Status.Motion.YAtLimit}" Value="False" />
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="● 未触发" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushSuccess}" />
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+
+                            <TextBlock Margin="0,14,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="任一联锁异常时，启动加工与回零将被禁止"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  最近操作  -->
+                    <Border Margin="0,12,0,0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleText}" Text="最近操作" />
+                            <ItemsControl Margin="0,6,0,0" ItemsSource="{Binding RecentActions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,6,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock FontFamily="{StaticResource FontMono}"
+                                                       FontSize="10.5"
+                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                       Text="{Binding TimeText}" />
+                                            <TextBlock Grid.Column="1"
+                                                       Margin="8,0,0,0"
+                                                       FontSize="11.5"
+                                                       Foreground="{Binding Level, Converter={StaticResource LogLevelBrush}}"
+                                                       Text="{Binding Message}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Message}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Margin="0,10,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="仅显示操作 / 任务 / 安全相关记录，完整日志见「报警与日志」页" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

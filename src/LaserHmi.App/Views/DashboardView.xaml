@@ -1,0 +1,405 @@
+﻿<UserControl x:Class="LaserHmi.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:LaserHmi.App.Controls"
+             xmlns:vm="clr-namespace:LaserHmi.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}"
+             d:DesignHeight="760"
+             d:DesignWidth="1100"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!--  趋势曲线面积渐变  -->
+        <LinearGradientBrush x:Key="AreaAccent" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#4538C3FF" />
+            <GradientStop Offset="1" Color="#0038C3FF" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="AreaWarning" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#40FFB454" />
+            <GradientStop Offset="1" Color="#00FFB454" />
+        </LinearGradientBrush>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="22,18,22,24">
+
+            <!--  标题行  -->
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="设备总览" />
+                <TextBlock Margin="0,4,0,0"
+                           Style="{StaticResource CaptionText}"
+                           Text="实时监控设备连接、激光器与运动系统状态及当前加工进度" />
+            </StackPanel>
+
+            <!--  ==================== 状态卡行 ====================  -->
+            <Grid Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--  设备连接  -->
+                <Border Grid.Column="0"
+                        Margin="0,0,14,0"
+                        Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CaptionText}" Text="设备连接" />
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <Ellipse Width="10"
+                                     Height="10"
+                                     VerticalAlignment="Center"
+                                     Fill="{Binding Status.Connection, Converter={StaticResource ConnectionBrush}}" />
+                            <TextBlock Margin="8,0,0,0"
+                                       FontSize="19"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding Status.Connection, Converter={StaticResource ConnectionBrush}}"
+                                       Text="{Binding Status.Connection, Converter={StaticResource ConnectionText}}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="LK-60 · 192.168.1.50:502" />
+                        <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                            <Button MinWidth="86"
+                                    Command="{Binding Operations.ConnectCommand}"
+                                    Content="连接设备"
+                                    Style="{StaticResource PrimaryButton}" />
+                            <Button MinWidth="86"
+                                    Margin="10,0,0,0"
+                                    Command="{Binding Operations.DisconnectCommand}"
+                                    Content="断开连接"
+                                    Style="{StaticResource SecondaryButton}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!--  运行状态  -->
+                <Border Grid.Column="1"
+                        Margin="0,0,14,0"
+                        Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CaptionText}" Text="运行状态" />
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <Ellipse Width="10"
+                                     Height="10"
+                                     VerticalAlignment="Center"
+                                     Fill="{Binding Status.State, Converter={StaticResource MachineStateBrush}}" />
+                            <TextBlock Margin="8,0,0,0"
+                                       FontSize="19"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding Status.State, Converter={StaticResource MachineStateBrush}}"
+                                       Text="{Binding Status.State, Converter={StaticResource MachineStateText}}" />
+                        </StackPanel>
+                        <TextBlock Margin="0,6,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="{Binding Status.State, Converter={StaticResource MachineStateHint}}"
+                                   TextWrapping="Wrap" />
+                        <Button Margin="0,12,0,0"
+                                HorizontalAlignment="Left"
+                                Command="{Binding Operations.HomeCommand}"
+                                Content="回零"
+                                Style="{StaticResource SecondaryButton}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  激光器  -->
+                <Border Grid.Column="2"
+                        Margin="0,0,14,0"
+                        Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Style="{StaticResource CaptionText}" Text="激光器" />
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" ToolTip="左侧圆点表示出光使能状态">
+                                <Ellipse Width="7" Height="7" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{StaticResource BrushIdle}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status.Laser.IsEnabled}" Value="True">
+                                                    <Setter Property="Fill" Value="{StaticResource BrushSuccess}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <TextBlock Margin="5,0,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="{Binding Status.Laser.InterlockClosed, Converter={StaticResource BoolToText}, ConverterParameter=联锁正常|联锁断开}" />
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MetricValueText}" Text="{Binding Status.Laser.Temperature, StringFormat={}{0:F1}}" />
+                            <TextBlock Style="{StaticResource MetricUnitText}" Text="°C" />
+                        </StackPanel>
+                        <TextBlock Margin="0,6,0,0" Style="{StaticResource CaptionText}">
+                            <Run Text="实际功率 " />
+                            <Run FontFamily="{StaticResource FontMono}" Text="{Binding Status.Laser.ActualPower, StringFormat={}{0:F1}}" />
+                            <Run Text="% / 设定 " />
+                            <Run FontFamily="{StaticResource FontMono}" Text="{Binding Status.Laser.SetPowerPercent, StringFormat={}{0:F0}}" />
+                            <Run Text="%" />
+                        </TextBlock>
+                        <TextBlock Margin="0,12,0,0"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="{Binding Status.Laser.IsEnabled, Converter={StaticResource BoolToText}, ConverterParameter=出光使能：已开启|出光使能：已关闭}" />
+                    </StackPanel>
+                </Border>
+
+                <!--  运动系统  -->
+                <Border Grid.Column="3" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Style="{StaticResource CaptionText}" Text="运动系统" />
+                            <TextBlock HorizontalAlignment="Right"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="{Binding Status.Motion.Homed, Converter={StaticResource BoolToText}, ConverterParameter=已回零|未回零}" />
+                        </Grid>
+                        <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MetricValueText}" Text="{Binding Status.Motion.Speed, StringFormat={}{0:F0}}" />
+                            <TextBlock Style="{StaticResource MetricUnitText}" Text="mm/s 当前速度" />
+                        </StackPanel>
+                        <TextBlock Margin="0,6,0,0"
+                                   FontFamily="{StaticResource FontMono}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="{Binding Status.Motion.X, StringFormat=X {0:F2} mm}" />
+                        <TextBlock Margin="0,2,0,0"
+                                   FontFamily="{StaticResource FontMono}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="{Binding Status.Motion.Y, StringFormat=Y {0:F2} mm}" />
+                        <TextBlock Margin="0,2,0,0"
+                                   FontFamily="{StaticResource FontMono}"
+                                   FontSize="12"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="{Binding Status.Motion.Z, StringFormat=Z {0:F2} mm}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!--  ==================== 任务 + 实时监视 ====================  -->
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="430" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--  当前任务  -->
+                <Border Grid.Column="0"
+                        Margin="0,0,14,0"
+                        Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CaptionText}" Text="当前加工任务" />
+
+                        <!--  空态  -->
+                        <StackPanel Margin="0,26,0,22">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Path Width="42"
+                                  Height="42"
+                                  HorizontalAlignment="Center"
+                                  Data="{StaticResource IconTarget}"
+                                  Stretch="Uniform"
+                                  Stroke="{StaticResource BrushTextMuted}"
+                                  StrokeThickness="1.2" />
+                            <TextBlock Margin="0,12,0,0"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{StaticResource BrushTextSecondary}"
+                                       Text="暂无加工任务" />
+                            <TextBlock Margin="0,6,0,0"
+                                       HorizontalAlignment="Center"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="前往「加工工作区」启动新任务" />
+                        </StackPanel>
+
+                        <!--  任务进行中  -->
+                        <Grid Margin="0,14,0,0">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <controls:ProgressRing Grid.Column="0"
+                                                   Width="138"
+                                                   Height="138"
+                                                   Caption="整体进度"
+                                                   Progress="{Binding Status.Task.OverallProgress}"
+                                                   Stroke="{StaticResource BrushAccent}" />
+
+                            <StackPanel Grid.Column="1"
+                                        Margin="20,4,0,0"
+                                        VerticalAlignment="Center">
+                                <TextBlock FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding Status.Task.Name}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="{Binding Status.Task.PatternName}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="{Binding Status.Task.PresetName, StringFormat=参数预设：{0}}" />
+                                <StackPanel Margin="0,10,0,0" Orientation="Horizontal">
+                                    <TextBlock FontFamily="{StaticResource FontMono}"
+                                               FontSize="20"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding Status.Task.CompletedParts}" />
+                                    <TextBlock Margin="3,0"
+                                               VerticalAlignment="Bottom"
+                                               FontFamily="{StaticResource FontMono}"
+                                               FontSize="13"
+                                               Foreground="{StaticResource BrushTextMuted}"
+                                               Text="{Binding Status.Task.TotalParts, StringFormat=/ {0} 件}" />
+                                </StackPanel>
+                                <TextBlock Margin="0,8,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="{Binding Status.Task.Remaining, StringFormat=预计剩余 {0:mm\\:ss}}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!--  单件进度  -->
+                        <StackPanel Margin="0,16,0,0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Grid>
+                                <TextBlock Style="{StaticResource CaptionText}" Text="当前件加工进度" />
+                                <TextBlock HorizontalAlignment="Right"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="{Binding Status.Task.CurrentPartProgress, StringFormat={}{0:P0}}" />
+                            </Grid>
+                            <ProgressBar Margin="0,6,0,0"
+                                         Maximum="1"
+                                         Style="{StaticResource ProgressThin}"
+                                         Value="{Binding Status.Task.CurrentPartProgress}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!--  实时监视  -->
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <TextBlock Style="{StaticResource CaptionText}" Text="激光输出功率 (%)" />
+                            <TextBlock HorizontalAlignment="Right"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       Text="{Binding Status.Laser.ActualPower, StringFormat={}{0:F1} %}" />
+                        </Grid>
+                        <controls:Sparkline Grid.Row="1"
+                                            Height="86"
+                                            Margin="0,6,0,10"
+                                            AutoScale="False"
+                                            Capacity="72"
+                                            Fill="{StaticResource AreaAccent}"
+                                            MaxValue="100"
+                                            MinValue="0"
+                                            Stroke="{StaticResource BrushAccent}"
+                                            Values="{Binding PowerTrend}" />
+
+                        <Grid Grid.Row="2">
+                            <TextBlock Style="{StaticResource CaptionText}" Text="激光模块温度 (°C)" />
+                            <TextBlock HorizontalAlignment="Right"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource BrushWarning}"
+                                       Text="{Binding Status.Laser.Temperature, StringFormat={}{0:F1} °C}" />
+                        </Grid>
+                        <controls:Sparkline Grid.Row="3"
+                                            Height="86"
+                                            Margin="0,6,0,0"
+                                            AutoScale="True"
+                                            Capacity="72"
+                                            Fill="{StaticResource AreaWarning}"
+                                            MinValue="20"
+                                            Stroke="{StaticResource BrushWarning}"
+                                            Values="{Binding TemperatureTrend}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!--  ==================== 最近事件 ====================  -->
+            <Border Margin="0,14,0,0" Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource CaptionText}" Text="最近事件" />
+                    <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding RecentEvents}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="96" />
+                                        <ColumnDefinition Width="58" />
+                                        <ColumnDefinition Width="86" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               FontFamily="{StaticResource FontMono}"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource BrushTextMuted}"
+                                               Text="{Binding TimeText}" />
+                                    <Border Grid.Column="1"
+                                            Width="42"
+                                            Padding="0,2"
+                                            HorizontalAlignment="Left"
+                                            Background="{Binding Level, Converter={StaticResource LogLevelBadgeBrush}}"
+                                            CornerRadius="4">
+                                        <TextBlock HorizontalAlignment="Center"
+                                                   FontSize="10.5"
+                                                   Foreground="{Binding Level, Converter={StaticResource LogLevelBrush}}"
+                                                   Text="{Binding Level, Converter={StaticResource LogLevelText}}" />
+                                    </Border>
+                                    <TextBlock Grid.Column="2"
+                                               Style="{StaticResource CaptionText}"
+                                               Text="{Binding Source}" />
+                                    <TextBlock Grid.Column="3"
+                                               FontSize="12"
+                                               Foreground="{StaticResource BrushTextSecondary}"
+                                               Text="{Binding Message}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

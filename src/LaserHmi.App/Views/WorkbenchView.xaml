@@ -1,0 +1,294 @@
+﻿<UserControl x:Class="LaserHmi.App.Views.WorkbenchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:LaserHmi.App.Controls"
+             xmlns:vm="clr-namespace:LaserHmi.App.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:WorkbenchViewModel}"
+             d:DesignHeight="760"
+             d:DesignWidth="1100"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+
+    <Grid Margin="22,18,22,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  标题行  -->
+        <Grid Grid.Row="0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="加工工作区" />
+                <TextBlock Margin="0,4,0,0"
+                           Style="{StaticResource CaptionText}"
+                           Text="图形预览、工件坐标与加工任务控制" />
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                <Border Padding="12,6"
+                        Background="{StaticResource BrushBgCard}"
+                        BorderBrush="{StaticResource BrushBorderSoft}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        ToolTip="当前工艺参数（在参数设置页修改）">
+                    <TextBlock FontFamily="{StaticResource FontMono}"
+                               FontSize="11.5"
+                               Foreground="{StaticResource BrushTextSecondary}"
+                               Text="{Binding ParameterSummary}" />
+                </Border>
+                <CheckBox Margin="16,0,0,0"
+                          VerticalAlignment="Center"
+                          Content="显示网格"
+                          IsChecked="{Binding ShowGrid}" />
+            </StackPanel>
+        </Grid>
+
+        <!--  内容区  -->
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="356" />
+            </Grid.ColumnDefinitions>
+
+            <!--  图形预览  -->
+            <Border Grid.Column="0"
+                    Margin="0,0,14,0"
+                    Padding="10"
+                    Style="{StaticResource Card}">
+                <Grid>
+                    <controls:MarkingPreview x:Name="Preview"
+                                             HeadPosition="{Binding Status.Task.HeadPosition}"
+                                             IsMarking="{Binding IsMarking}"
+                                             Path="{Binding PreviewPath}"
+                                             Progress="{Binding Status.Task.CurrentPartProgress}"
+                                             ShowGrid="{Binding ShowGrid}" />
+
+                    <!--  左上角信息浮层  -->
+                    <StackPanel Margin="12,10,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top">
+                        <Border Padding="10,5"
+                                HorizontalAlignment="Left"
+                                Background="#B30E1626"
+                                BorderBrush="{StaticResource BrushBorderSoft}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                            <TextBlock FontSize="11"
+                                       Foreground="{StaticResource BrushTextSecondary}"
+                                       Text="幅面 100 × 100 mm · 原点位于左下角" />
+                        </Border>
+                    </StackPanel>
+
+                    <!--  右上角激光头坐标（仅加工中有任务时显示）  -->
+                    <Border Margin="0,10,12,0"
+                            Padding="10,5"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Background="#B30E1626"
+                            BorderBrush="{StaticResource BrushBorderSoft}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource FontMono}"
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       Text="{Binding Status.Task.HeadPosition.X, StringFormat=X {0:F2}}" />
+                            <TextBlock Margin="10,0,0,0"
+                                       FontFamily="{StaticResource FontMono}"
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       Text="{Binding Status.Task.HeadPosition.Y, StringFormat=Y {0:F2}}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  空态引导：就绪且无任务时提示操作路径  -->
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding ShowPreviewHint, Converter={StaticResource BoolToVis}}">
+                        <TextBlock HorizontalAlignment="Center"
+                                   Foreground="{StaticResource BrushTextMuted}"
+                                   Text="预加载图案：外框 / 圆环 / 五角星 / 中心圆" />
+                        <TextBlock Margin="0,6,0,0"
+                                   HorizontalAlignment="Center"
+                                   Style="{StaticResource CaptionText}"
+                                   Text="点击右侧「启动加工」开始演示流程" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!--  任务与操作面板  -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!--  任务信息  -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CaptionText}" Text="加工任务" />
+
+                            <!--  空态  -->
+                            <TextBlock Margin="0,10,0,2"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       Text="当前没有进行中的任务">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!--  有任务  -->
+                            <StackPanel Margin="0,8,0,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status.Task}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <TextBlock FontSize="13.5"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding Status.Task.Name}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,4,0,0"
+                                           Style="{StaticResource CaptionText}"
+                                           Text="{Binding Status.Task.PresetName, StringFormat=参数预设：{0}}" />
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource CaptionText}" Text="整体进度" />
+                                    <TextBlock HorizontalAlignment="Right"
+                                               FontFamily="{StaticResource FontMono}"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource BrushAccent}"
+                                               Text="{Binding Status.Task.OverallProgress, StringFormat={}{0:P0}}" />
+                                </Grid>
+                                <ProgressBar Margin="0,5,0,0"
+                                             Maximum="1"
+                                             Style="{StaticResource ProgressThick}"
+                                             Value="{Binding Status.Task.OverallProgress}" />
+
+                                <Grid Margin="0,10,0,0">
+                                    <TextBlock Style="{StaticResource CaptionText}"
+                                               Text="{Binding Status.Task.CurrentPartIndex, StringFormat=当前第 {0} 件}" />
+                                    <TextBlock HorizontalAlignment="Right"
+                                               Style="{StaticResource CaptionText}"
+                                               Text="{Binding Status.Task.CompletedParts, StringFormat=已完成 {0} 件}" />
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!--  任务设置  -->
+                    <Border Margin="0,12,0,0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CaptionText}" Text="启动设置" />
+                            <Grid Margin="0,10,0,0">
+                                <TextBlock Style="{StaticResource LabelText}" Text="加工件数" />
+                                <TextBlock HorizontalAlignment="Right"
+                                           FontFamily="{StaticResource FontMono}"
+                                           FontSize="13"
+                                           Foreground="{StaticResource BrushAccent}"
+                                           Text="{Binding Operations.TaskPartCount}" />
+                            </Grid>
+                            <Slider Margin="0,6,0,0"
+                                    IsSnapToTickEnabled="True"
+                                    LargeChange="1"
+                                    Maximum="20"
+                                    Minimum="1"
+                                    SmallChange="1"
+                                    TickFrequency="1"
+                                    Value="{Binding Operations.TaskPartCount}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  快捷操作  -->
+                    <Border Margin="0,12,0,0" Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CaptionText}" Text="快捷操作" />
+
+                            <Button Margin="0,10,0,0"
+                                    AutomationProperties.Name="回零"
+                                    Command="{Binding Operations.HomeCommand}"
+                                    Style="{StaticResource SecondaryButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="16"
+                                          Height="16"
+                                          Data="{StaticResource IconHome}"
+                                          Stretch="Uniform"
+                                          Stroke="{StaticResource BrushTextPrimary}"
+                                          StrokeThickness="1.7" />
+                                    <TextBlock Margin="8,0,0,0" Text="回零" />
+                                </StackPanel>
+                            </Button>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Margin="0,0,5,0"
+                                        Command="{Binding Operations.PauseCommand}"
+                                        Content="暂停"
+                                        Style="{StaticResource SecondaryButton}" />
+                                <Button Grid.Column="1"
+                                        Margin="5,0,0,0"
+                                        Command="{Binding Operations.ResumeCommand}"
+                                        Content="继续"
+                                        Style="{StaticResource SecondaryButton}" />
+                            </Grid>
+
+                            <Button Margin="0,10,0,0"
+                                    AutomationProperties.Name="启动加工"
+                                    Command="{Binding Operations.StartCommand}"
+                                    Style="{StaticResource PrimaryButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Width="15"
+                                          Height="15"
+                                          Data="{StaticResource IconPlay}"
+                                          Fill="{StaticResource BrushTextOnAccent}"
+                                          Stretch="Uniform" />
+                                    <TextBlock Margin="8,0,0,0"
+                                               Foreground="{StaticResource BrushTextOnAccent}"
+                                               Text="启动加工" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Margin="0,10,0,0"
+                                    Command="{Binding Operations.StopCommand}"
+                                    Content="停止任务"
+                                    Style="{StaticResource DangerButton}" />
+
+                            <Button Margin="0,10,0,0"
+                                    Command="{Binding Operations.EmergencyStopCommand}"
+                                    Content="紧急停止 E-STOP"
+                                    Style="{StaticResource DangerSolidButton}" />
+
+                            <TextBlock Margin="0,10,0,0"
+                                       Style="{StaticResource CaptionText}"
+                                       Text="提示：启动 / 停止需二次确认；紧急停止立即生效"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>
